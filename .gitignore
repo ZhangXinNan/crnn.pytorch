@@ -5,3 +5,5 @@
 *.log
 *.tmp
 *.zip
+data/lmdb/
+data/imgs/
