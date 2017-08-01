@@ -7,3 +7,5 @@
 *.zip
 data/lmdb/
 data/imgs/
+data/train/
+data/val/

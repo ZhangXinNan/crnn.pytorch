@@ -68,7 +68,7 @@ python crnn_main.py \
     --displayInterval=100 \
     --valInterval=100 \
     --adadelta \
-    --lr=0.001 \
+    --lr=0.01 \
     --random_sample \
     --cuda \
     --ngpu 1
