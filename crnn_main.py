@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 import argparse
 import random
 import torch
@@ -8,7 +9,6 @@ import torch.utils.data
 from torch.autograd import Variable
 import numpy as np
 from warpctc_pytorch import CTCLoss
-import os
 import utils
 import dataset
 
@@ -55,7 +55,7 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 
-def trainBatch(net, criterion, optimizer):
+def trainBatch(net, criterion, optimizer, train_iter):
     data = train_iter.next()
     cpu_images, cpu_texts = data
     batch_size = cpu_images.size(0)
@@ -72,7 +72,7 @@ def trainBatch(net, criterion, optimizer):
     optimizer.step()
     return cost
 
-def val(net, dataset, criterion, max_iter=100):
+def val(net, dataset, criterion, max_iter=100, batchSize=64, workers=2, n_test_disp=10):
     print('Start val')
 
     for p in crnn.parameters():
@@ -80,7 +80,7 @@ def val(net, dataset, criterion, max_iter=100):
 
     net.eval()
     data_loader = torch.utils.data.DataLoader(
-        dataset, shuffle=True, batch_size=opt.batchSize, num_workers=int(opt.workers))
+        dataset, shuffle=True, batch_size=batchSize, num_workers=int(workers))
     val_iter = iter(data_loader)
 
     i = 0
@@ -111,11 +111,11 @@ def val(net, dataset, criterion, max_iter=100):
             if pred == target.lower():
                 n_correct += 1
 
-    raw_preds = converter.decode(preds.data, preds_size.data, raw=True)[:opt.n_test_disp]
+    raw_preds = converter.decode(preds.data, preds_size.data, raw=True)[:n_test_disp]
     for raw_pred, pred, gt in zip(raw_preds, sim_preds, cpu_texts):
         print('%-20s => %-20s, gt: %-20s' % (raw_pred, pred, gt))
 
-    accuracy = n_correct / float(max_iter * opt.batchSize)
+    accuracy = n_correct / float(max_iter * batchSize)
     print('Test loss: %f, accuray: %f' % (loss_avg.val(), accuracy))
 
 def main(opt):
@@ -151,19 +151,21 @@ def main(opt):
 
     nclass = len(opt.alphabet) + 1
     nc = 1
-
+    global converter
     converter = utils.strLabelConverter(opt.alphabet)
     criterion = CTCLoss()
-
+    global crnn
     crnn = crnn.CRNN(opt.imgH, nc, nclass, opt.nh)
     crnn.apply(weights_init)
     if opt.crnn != '':
         print('loading pretrained model from %s' % opt.crnn)
         crnn.load_state_dict(torch.load(opt.crnn))
     print(crnn)
-
+    global image
     image = torch.FloatTensor(opt.batchSize, 3, opt.imgH, opt.imgH)
+    global text
     text = torch.IntTensor(opt.batchSize * 5)
+    global length
     length = torch.IntTensor(opt.batchSize)
 
     if opt.cuda:
@@ -196,7 +198,7 @@ def main(opt):
                 p.requires_grad = True
             crnn.train()
 
-            cost = trainBatch(crnn, criterion, optimizer)
+            cost = trainBatch(crnn, criterion, optimizer, train_iter)
             loss_avg.add(cost)
             i += 1
 
