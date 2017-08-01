@@ -1,6 +1,8 @@
 #encoding=utf8
 '''
 generate images for training
+0123456789abcdefghijklmnopqrstuvwxyz
+0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 '''
 import os
 import random

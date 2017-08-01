@@ -31,17 +31,20 @@ Train a new model
 -----------------
 1. Construct dataset following origin guide. For training with variable length, please sort the image according to the text length.
 ```
-python gen_image.py --output data/train --make_num 10000
-python gen_image.py --output data/val --make_num 1000
+python gen_image.py --font_path /Library/Fonts/华文仿宋.ttf --output data/train --make_num 10000 --char_set 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ
+python gen_image.py --font_path /Library/Fonts/华文仿宋.ttf --output data/val --make_num 1000 --char_set 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+python gen_image.py --font_path /data/zhangxin/dmocr/_tmp/华文仿宋.ttf --output data/train --make_num 100000 --char_set 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ
+python gen_image.py --font_path /data/zhangxin/dmocr/_tmp/华文仿宋.ttf --output data/val --make_num 10000 --char_set 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ
 
 python create_dataset_main.py --lmdb_path data/lmdb/train --data_path data/train
 python create_dataset_main.py --lmdb_path data/lmdb/val --data_path data/val
 ```
 2. ``python crnn_main.py [--param val]``. Explore ``crnn_main.py`` for details.
-
+cpu
 ```
 python crnn_main.py \
-    --alphabet='0123456789' \
+    --alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
     --trainroot='data/lmdb/train' \
     --valroot='data/lmdb/val' \
     --workers=1 \
@@ -51,4 +54,22 @@ python crnn_main.py \
     --adadelta \
     --lr=0.01 \
     --random_sample
+```
+
+
+gpu
+```
+python crnn_main.py \
+    --alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
+    --trainroot='data/lmdb/train' \
+    --valroot='data/lmdb/val' \
+    --workers=2 \
+    --batchSize=64 \
+    --displayInterval=100 \
+    --valInterval=100 \
+    --adadelta \
+    --lr=0.001 \
+    --random_sample \
+    --cuda \
+    --ngpu 1
 ```

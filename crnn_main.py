@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 import argparse
 import random
 import torch
@@ -8,10 +9,9 @@ import torch.utils.data
 from torch.autograd import Variable
 import numpy as np
 from warpctc_pytorch import CTCLoss
-import os
 import utils
 import dataset
-
+import editdistance
 import models.crnn as crnn
 
 parser = argparse.ArgumentParser()
@@ -137,6 +137,8 @@ def val(net, dataset, criterion, max_iter=100):
     loss_avg = utils.averager()
 
     max_iter = min(max_iter, len(data_loader))
+    n_char = 0
+    n_char_right = 0
     for i in range(max_iter):
         data = val_iter.next()
         i += 1
@@ -157,15 +159,24 @@ def val(net, dataset, criterion, max_iter=100):
         preds = preds.transpose(1, 0).contiguous().view(-1)
         sim_preds = converter.decode(preds.data, preds_size.data, raw=False)
         for pred, target in zip(sim_preds, cpu_texts):
-            if pred == target.lower():
+            # print type(pred), pred, type(target), target
+            pred = pred.lower()
+            target = target.lower()
+            if pred == target:
                 n_correct += 1
+            n_char += len(target)
+            char_right_number = len(target) - min(len(target), editdistance.eval(target, pred))
+            n_char_right += char_right_number
+            # print (pred, target, char_right_number)
+
 
     raw_preds = converter.decode(preds.data, preds_size.data, raw=True)[:opt.n_test_disp]
     for raw_pred, pred, gt in zip(raw_preds, sim_preds, cpu_texts):
         print('%-20s => %-20s, gt: %-20s' % (raw_pred, pred, gt))
 
     accuracy = n_correct / float(max_iter * opt.batchSize)
-    print('Test loss: %f, accuray: %f' % (loss_avg.val(), accuracy))
+    accuracy_char = n_char_right / float(n_char)
+    print('Test loss: %f, accuray: %f, accuracy_char: %f' % (loss_avg.val(), accuracy, accuracy_char))
 
 
 def trainBatch(net, criterion, optimizer):
