@@ -3,6 +3,7 @@
 import os
 import glob
 import argparse
+import random
 from create_dataset import *
 
 def get_args():
@@ -19,8 +20,9 @@ def main(args):
         os.makedirs(args.lmdb_path)
     imgpathlist = []
     labellist = []
-
-    for filename in glob.glob(os.path.join(args.data_path, args.suffix)):
+    filelist = glob.glob(os.path.join(args.data_path, args.suffix))
+    random.shuffle(filelist)
+    for filename in filelist:
         linepart = filename.split('.')[0].split('_')
         if len(linepart) < 2:
             continue
