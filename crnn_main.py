@@ -58,9 +58,16 @@ def weights_init(m):
 def trainBatch(net, criterion, optimizer, train_iter):
     data = train_iter.next()
     cpu_images, cpu_texts = data
+    # print (cpu_texts, len(cpu_texts))
+    new_texts = []
+    for item in cpu_texts:
+        new_texts.append(item.decode('utf-8'))
+    # print(cpu_texts)
+    # print(new_texts)
     batch_size = cpu_images.size(0)
     utils.loadData(image, cpu_images)
-    t, l = converter.encode(cpu_texts)
+    # t, l = converter.encode(cpu_texts)
+    t, l = converter.encode(new_texts)
     utils.loadData(text, t)
     utils.loadData(length, l)
 
@@ -94,9 +101,13 @@ def val(net, dataset, criterion, max_iter=100, batchSize=64, workers=2, n_test_d
         data = val_iter.next()
         i += 1
         cpu_images, cpu_texts = data
+        new_texts = []
+        for item in cpu_texts:
+            new_texts.append(item.decode('utf-8'))
         batch_size = cpu_images.size(0)
         utils.loadData(image, cpu_images)
-        t, l = converter.encode(cpu_texts)
+        # t, l = converter.encode(cpu_texts)
+        t, l = converter.encode(new_texts)
         utils.loadData(text, t)
         utils.loadData(length, l)
 
@@ -109,10 +120,11 @@ def val(net, dataset, criterion, max_iter=100, batchSize=64, workers=2, n_test_d
         preds = preds.squeeze(2)
         preds = preds.transpose(1, 0).contiguous().view(-1)
         sim_preds = converter.decode(preds.data, preds_size.data, raw=False)
-        for pred, target in zip(sim_preds, cpu_texts):
+        # for pred, target in zip(sim_preds, cpu_texts):
+        for pred, target in zip(sim_preds, new_texts):
             # print type(pred), pred, type(target), target
-            pred = pred.lower()
-            target = target.lower()
+            # pred = pred.lower()
+            # target = target.lower()
             if pred == target:
                 n_correct += 1
             n_char += len(target)
@@ -122,7 +134,8 @@ def val(net, dataset, criterion, max_iter=100, batchSize=64, workers=2, n_test_d
 
 
     raw_preds = converter.decode(preds.data, preds_size.data, raw=True)[:n_test_disp]
-    for raw_pred, pred, gt in zip(raw_preds, sim_preds, cpu_texts):
+    # for raw_pred, pred, gt in zip(raw_preds, sim_preds, cpu_texts):
+    for raw_pred, pred, gt in zip(raw_preds, sim_preds, new_texts):
         print('%-20s => %-20s, gt: %-20s' % (raw_pred, pred, gt))
 
     accuracy = n_correct / float(max_iter * batchSize)
@@ -159,11 +172,13 @@ def main(opt):
         collate_fn=dataset.alignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio=opt.keep_ratio))
     test_dataset = dataset.lmdbDataset(
         root=opt.valroot, transform=dataset.resizeNormalize((100, 32)))
-
+    opt.alphabet = opt.alphabet.decode('utf-8')
     nclass = len(opt.alphabet) + 1
+    print (opt.alphabet, nclass)
     nc = 1
     global converter
-    converter = utils.strLabelConverter(opt.alphabet)
+    converter = utils.strLabelConverter(opt.alphabet, ignore_case=False)
+    print(converter.dict)
     criterion = CTCLoss()
     global crnn
     crnn = crnn.CRNN(opt.imgH, nc, nclass, opt.nh)

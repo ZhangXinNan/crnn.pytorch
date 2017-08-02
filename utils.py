@@ -45,6 +45,10 @@ class strLabelConverter(object):
                 for char in text
             ]
             length = [len(text)]
+        elif isinstance(text, unicode):
+            #text=text.decode('utf-8')
+            text = [self.dict[char] for char in text]
+            length = [len(text)]
         elif isinstance(text, collections.Iterable):
             length = [len(s) for s in text]
             text = ''.join(text)
