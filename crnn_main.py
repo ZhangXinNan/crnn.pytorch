@@ -1,3 +1,4 @@
+#coding=utf-8
 from __future__ import print_function
 import os
 import argparse
@@ -142,6 +143,17 @@ def val(net, dataset, criterion, max_iter=100, batchSize=64, workers=2, n_test_d
     accuracy_char = n_char_right / float(n_char)
     print('Test loss: %f, accuray: %f, accuracy_char: %f' % (loss_avg.val(), accuracy, accuracy_char))
 
+def get_char_set(alphabet):
+    '''char set'''
+    if os.path.isfile(alphabet):
+        with open(alphabet, 'r') as obj:
+            return obj.read().strip().decode('utf-8')
+    elif isinstance(alphabet, str):
+        return alphabet.decode('utf-8')
+    else:
+        raise Exception('unknown alphabet format !')
+    return None
+
 def main(opt):
     '''main'''
     if opt.experiment is None:
@@ -172,7 +184,8 @@ def main(opt):
         collate_fn=dataset.alignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio=opt.keep_ratio))
     test_dataset = dataset.lmdbDataset(
         root=opt.valroot, transform=dataset.resizeNormalize((100, 32)))
-    opt.alphabet = opt.alphabet.decode('utf-8')
+    # opt.alphabet = opt.alphabet.decode('utf-8')
+    opt.alphabet = get_char_set(opt.alphabet)
     nclass = len(opt.alphabet) + 1
     print (opt.alphabet, nclass)
     nc = 1
