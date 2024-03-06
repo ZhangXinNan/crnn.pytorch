@@ -1,0 +1,6 @@
+lmdb==1.4.1
+numpy==1.26.4
+Pillow==10.2.0
+six==1.16.0
+torch==2.2.1
+torchvision==2.2.1
